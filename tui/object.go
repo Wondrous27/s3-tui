@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Wondrous27/s3-tui/object"
 	"github.com/Wondrous27/s3-tui/tui/constants"
@@ -87,7 +88,7 @@ func (m *Object) setViewportContent() {
 
 func (m Object) helpView() string {
 	// TODO: use the keymaps to populate the help string
-	return constants.HelpStyle("\n ↑/↓: navigate  • esc: back • c: create entry • d: delete entry • q: quit\n")
+	return constants.HelpStyle("\n ↑/↓: navigate  • esc: back • e: edit object • c: create object • d: delete entry • q: quit\n")
 }
 
 // View return the text UI to be output to the terminal
@@ -106,32 +107,34 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		top, right, bottom, left := constants.DocStyle.GetMargin()
 		m.viewport = viewport.New(constants.WindowSize.Width-left-right, constants.WindowSize.Height-top-bottom-6)
+
 	case errMsg:
 		m.error = msg.Error()
-	// case editorFinishedMsg:
-	// 	m.quitting = false
-	// 	if msg.err != nil {
-	// 		return m, tea.Quit
-	// 	}
-	// 	cmds = append(cmds, m.createObjectCmd(msg.file))
+
+	case editorFinishedMsg:
+		if msg.err != nil {
+			return m, tea.Quit
+		}
+		cmds = append(cmds, m.updateObjectCmd(msg.file.Name()))
+
 	case UpdatedObjects:
 		m.objects = msg
 		m.paginator.SetTotalPages(len(m.objects))
 		m.setViewportContent()
+
 	case tea.KeyMsg:
 		switch {
 		// TODO: find a way to override h&l to get object content on demand
 		// case key.Matches(msg, constants.Keymap.Next):
 		// 	fallthrough
 		// case key.Matches(msg, constants.Keymap.Prev):
-		// 	m.quitting = false
 		// 	return m, nil
-
 		case key.Matches(msg, constants.Keymap.Edit):
-			m.quitting = true
-			return m, openEditorCmd("hi")
+			fileContent := m.objects[m.paginator.Page].Content
+			keys := strings.Split(m.objects[m.paginator.Page].Key, "/")
+			fileName := keys[len(keys)-1]
+			return m, openEditorCmd(fileContent, fileName)
 		case key.Matches(msg, constants.Keymap.Create):
-			// TODO: remove m.quitting after bug in Bubble Tea (#431) is fixed
 			return m, nil
 			// return m, openEditorCmd()
 		case key.Matches(msg, constants.Keymap.Back):

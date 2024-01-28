@@ -16,7 +16,6 @@ type S3Repository struct {
 	Client *s3.Client
 }
 
-// type.Bucket
 type Bucket struct {
 	Name         string
 	CreationDate time.Time
@@ -39,7 +38,11 @@ func (s S3Repository) GetAllBuckets() ([]Bucket, error) {
 
 	buckets := make([]Bucket, 0, len(s3buckets.Buckets))
 	for _, b := range s3buckets.Buckets {
-		buckets = append(buckets, Bucket{Name: *b.Name, CreationDate: *b.CreationDate})
+		buckets = append(buckets, Bucket{
+			Name:         *b.Name,
+			CreationDate: *b.CreationDate,
+		})
 	}
 	return buckets, nil
 }
+

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"time"
 
@@ -94,4 +95,16 @@ func (s S3Repository) GetObjectContent(bucket string, key string) ([]byte, error
 		return nil, fmt.Errorf("could not read object: %v", err)
 	}
 	return body, nil
+}
+
+func (s S3Repository) PutObject(file *os.File, bucket string, key string) error {
+	_, err := s.Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: &bucket,
+		Key:    &key,
+		Body:   file,
+	})
+	if err != nil {
+		return fmt.Errorf("could not put object %v", err)
+	}
+	return nil
 }
