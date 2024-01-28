@@ -126,9 +126,12 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// case key.Matches(msg, constants.Keymap.Prev):
 		// 	m.quitting = false
 		// 	return m, nil
+
+		case key.Matches(msg, constants.Keymap.Edit):
+			m.quitting = true
+			return m, openEditorCmd("hi")
 		case key.Matches(msg, constants.Keymap.Create):
 			// TODO: remove m.quitting after bug in Bubble Tea (#431) is fixed
-			m.quitting = true
 			return m, nil
 			// return m, openEditorCmd()
 		case key.Matches(msg, constants.Keymap.Back):

@@ -43,9 +43,8 @@ func (s S3Repository) ListObjects(bucketName string) ([]Object, error) {
 		return nil, fmt.Errorf("could not get objects: %v", err)
 	}
 
-	// Create a channel to receive results from goroutines
 	objCh := make(chan Object)
-	errCh := make(chan error)
+	// errCh := make(chan error)
 
 	// Iterate through objects and spawn goroutines for each
 	var wg sync.WaitGroup
@@ -71,7 +70,7 @@ func (s S3Repository) ListObjects(bucketName string) ([]Object, error) {
 	go func() {
 		wg.Wait()
 		close(objCh)
-		close(errCh)
+		// close(errCh)
 	}()
 
 	// Collect results from channels

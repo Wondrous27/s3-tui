@@ -37,6 +37,7 @@ var AlertStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Render
 
 type keymap struct {
 	Create key.Binding
+	Edit   key.Binding
 	Enter  key.Binding
 	Rename key.Binding
 	Delete key.Binding
@@ -71,6 +72,9 @@ var Keymap = keymap{
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c", "q"),
 		key.WithHelp("ctrl+c/q", "quit"),
+	),
+	Edit: key.NewBinding(
+		key.WithKeys("e"),
 	),
 	Next: key.NewBinding(
 		key.WithKeys("l"),
