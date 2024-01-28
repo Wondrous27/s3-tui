@@ -45,9 +45,11 @@ func (m Model) View() string {
 	if m.quitting {
 		return ""
 	}
+
 	if m.input.Focused() {
 		return constants.DocStyle.Render(m.list.View() + "\n" + m.input.View())
 	}
+
 	return constants.DocStyle.Render(m.list.View() + "\n")
 }
 
@@ -68,10 +70,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				return m, tea.Quit
 			case key.Matches(msg, constants.Keymap.Enter):
-				activeProject := m.list.SelectedItem().(bucket.Bucket)
-				fmt.Println("selected", activeProject)
-				// entry := InitEntry(constants.Er, activeProject.ID, constants.P)
-				// return entry.Update(constants.WindowSize)
+				// init the objects here
+				activeBucket := m.list.SelectedItem().(bucket.Bucket)
+				object := InitObject(activeBucket.Name)
+				return object.Update(constants.WindowSize)
 			}
 		}
 	}
