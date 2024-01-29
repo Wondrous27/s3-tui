@@ -58,7 +58,7 @@ func InitObject(bucketName string) *Object {
 
 	m.objects = m.setupObjects().(UpdatedObjects)
 	m.paginator.SetTotalPages(len(m.objects))
-	// // set content
+	// set content
 	m.setViewportContent()
 	return &m
 }
