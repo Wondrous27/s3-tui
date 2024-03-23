@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/charmbracelet/bubbles/list"
 )
 
 const (
@@ -30,13 +31,13 @@ func (b Bucket) Description() string {
 
 func (b Bucket) FilterValue() string { return b.Name }
 
-func (s S3Repository) GetAllBuckets() ([]Bucket, error) {
+func (s S3Repository) GetAllBuckets() ([]list.Item, error) {
 	s3buckets, err := s.Client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("could not list buckets: %v", err)
 	}
 
-	buckets := make([]Bucket, 0, len(s3buckets.Buckets))
+	buckets := make([]list.Item, 0, len(s3buckets.Buckets))
 	for _, b := range s3buckets.Buckets {
 		buckets = append(buckets, Bucket{
 			Name:         *b.Name,
@@ -45,4 +46,3 @@ func (s S3Repository) GetAllBuckets() ([]Bucket, error) {
 	}
 	return buckets, nil
 }
-

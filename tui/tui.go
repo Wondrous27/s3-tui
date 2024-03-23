@@ -10,9 +10,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func StartTea(br bucket.S3Repository, or object.S3Repository) {
-	constants.Br = &br
-	constants.Or = &or
+func StartTea(br *bucket.S3Repository, or *object.S3Repository) {
+	constants.Br = br
+	constants.Or = or
 
 	m, err := InitBuckets()
 	if err != nil {

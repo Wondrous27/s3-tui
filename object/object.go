@@ -46,7 +46,7 @@ func (s S3Repository) ListObjects(bucketName string) ([]Object, error) {
 
 	objCh := make(chan Object)
 	// errCh := make(chan error)
-
+	// TODO: remove this get items one by one
 	// Iterate through objects and spawn goroutines for each
 	var wg sync.WaitGroup
 	for _, obj := range out.Contents {

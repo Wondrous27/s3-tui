@@ -43,8 +43,8 @@ func (m Object) Init() tea.Cmd {
 	return nil
 }
 
-// InitObject initialize the objectui model for your program
-func InitObject(bucketName string) *Object {
+// InitObjects initialize the objectui model for your program
+func InitObjects(bucketName string) *Object {
 	m := Object{activeBucketName: bucketName}
 	top, right, bottom, left := constants.DocStyle.GetMargin()
 	m.viewport = viewport.New(constants.WindowSize.Width-left-right, constants.WindowSize.Height-top-bottom-1)
@@ -66,7 +66,7 @@ func InitObject(bucketName string) *Object {
 func (m *Object) setupObjects() tea.Msg {
 	var err error
 	var objects []object.Object
-	if objects, _ = constants.Or.ListObjects(m.activeBucketName); err != nil {
+	if objects, err = constants.Or.ListObjects(m.activeBucketName); err != nil {
 		return errMsg{fmt.Errorf("cannot find project: %v", err)}
 	}
 	return UpdatedObjects(objects)

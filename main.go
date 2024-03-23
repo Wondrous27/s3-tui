@@ -13,13 +13,13 @@ import (
 
 func main() {
 	/* TODO: Take region as a cmdline argument */
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("eu-central-1"))
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	client := s3.NewFromConfig(cfg)
-	br := bucket.S3Repository{Client: client}
-	or := object.S3Repository{Client: client}
+	br := &bucket.S3Repository{Client: client}
+	or := &object.S3Repository{Client: client}
 	tui.StartTea(br, or)
 }

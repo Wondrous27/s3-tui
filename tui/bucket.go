@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 
 	// "github.com/charmbracelet/bubbles/key"
 	"github.com/Wondrous27/s3-tui/bucket"
@@ -70,9 +69,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				return m, tea.Quit
 			case key.Matches(msg, constants.Keymap.Enter):
-				// init the objects here
 				activeBucket := m.list.SelectedItem().(bucket.Bucket)
-				object := InitObject(activeBucket.Name)
+				object := InitObjects(activeBucket.Name)
 				return object.Update(constants.WindowSize)
 			}
 		}
@@ -90,7 +88,12 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	input.Width = 50
 
 	// TODO: handle error
-	items, _ := newBucketsList(constants.Br)
+	items, err := constants.Br.GetAllBuckets()
+	if err != nil {
+		return nil, func() tea.Msg {
+			return errMsg{error: err}
+		}
+	}
 
 	m := Model{mode: nav, list: list.New(items, list.NewDefaultDelegate(), 8, 8), input: input}
 	if constants.WindowSize.Height != 0 {
@@ -110,21 +113,3 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func newBucketsList(br *bucket.S3Repository) ([]list.Item, error) {
-	buckets, err := br.GetAllBuckets()
-	if err != nil {
-		return nil, fmt.Errorf("cannot get buckets: %w", err)
-	}
-	return bucketsToItems(buckets), err
-}
-
-// func ConvertToItems[T any](buckets []T) []list.Item {
-// TODO: use generics
-// projectsToItems convert []model.Project to []list.Item
-func bucketsToItems(buckets []bucket.Bucket) []list.Item {
-	items := make([]list.Item, len(buckets))
-	for i, bucket := range buckets {
-		items[i] = list.Item(bucket)
-	}
-	return items
-}
