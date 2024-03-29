@@ -1,11 +1,9 @@
 package tui
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
-	"github.com/Wondrous27/s3-tui/tui/constants"
 	"github.com/Wondrous27/s3-tui/utils"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -27,15 +25,15 @@ func openEditorCmd(data string, extension string) tea.Cmd {
 	})
 }
 
-func (m Object) updateObjectCmd(fileName string) tea.Cmd {
-	return func() tea.Msg {
-		file, _ := os.Open(fileName)
-		key := m.objects[m.paginator.Page].Key
-		bucket := m.activeBucketName
-		err := constants.Or.PutObject(file, bucket, key)
-		if err != nil {
-			return errMsg{fmt.Errorf("cannot read file in createEntryCmd: %v", err)}
-		}
-		return m.setupObjects()
-	}
-}
+// func (m Object) updateObjectCmd(fileName string) tea.Cmd {
+// 	return func() tea.Msg {
+// 		file, _ := os.Open(fileName)
+// 		key := m.object.Key
+// 		bucket := m.activeBucketName
+// 		err := constants.Or.PutObject(file, bucket, key)
+// 		if err != nil {
+// 			return errMsg{fmt.Errorf("cannot read file in createEntryCmd: %v", err)}
+// 		}
+// 		return m.setupObject()
+// 	}
+// }

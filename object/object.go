@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"sync"
+	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -38,54 +37,23 @@ func (o Object) Description() string {
 
 func (o Object) Title() string { return o.Key }
 
-func (s S3Repository) ListObjects(bucketName string) ([]Object, error) {
+func (s S3Repository) ListObjects(bucketName string) ([]string, error) {
 	out, err := s.Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{Bucket: &bucketName})
 	if err != nil {
 		return nil, fmt.Errorf("could not get objects: %v", err)
 	}
 
-	objCh := make(chan Object)
-	// errCh := make(chan error)
-	// TODO: remove this get items one by one
-	// Iterate through objects and spawn goroutines for each
-	var wg sync.WaitGroup
+	var keys []string
 	for _, obj := range out.Contents {
-		wg.Add(1)
-		go func(obj types.Object) {
-			defer wg.Done()
-			// TODO: err handling
-			content, _ := s.GetObjectContent(bucketName, *obj.Key)
-			object := Object{
-				Key:          *obj.Key,
-				LastModified: *obj.LastModified,
-				Size:         *obj.Size,
-				ETag:         *obj.ETag,
-				StorageClass: obj.StorageClass,
-				Content:      string(content),
-			}
-			objCh <- object
-		}(obj)
+		keys = append(keys, *obj.Key)
 	}
 
-	// Close the channel once all goroutines are done
-	go func() {
-		wg.Wait()
-		close(objCh)
-		// close(errCh)
-	}()
-
-	// Collect results from channels
-	objects := make([]Object, 0, len(out.Contents))
-	for obj := range objCh {
-		objects = append(objects, obj)
-	}
-
-	fmt.Println("objects:", objects)
-	return objects, nil
+	return keys, nil
 }
 
-func (s S3Repository) GetObjectContent(bucket string, key string) ([]byte, error) {
+func (s S3Repository) GetObject(bucket, key string) (*Object, error) {
 	result, err := s.Client.GetObject(context.TODO(), &s3.GetObjectInput{Bucket: &bucket, Key: &key})
+	log.Println("last modified: ", *result.LastModified)
 	if err != nil {
 		return nil, fmt.Errorf("could not get object: %v", err)
 	}
@@ -94,17 +62,32 @@ func (s S3Repository) GetObjectContent(bucket string, key string) ([]byte, error
 	if err != nil {
 		return nil, fmt.Errorf("could not read object: %v", err)
 	}
-	return body, nil
+	return &Object{
+		Key:          key,
+		LastModified: *result.LastModified,
+		Size:         *result.ContentLength,
+		ETag:         *result.ETag,
+		Content:      string(body),
+	}, nil
 }
 
-func (s S3Repository) PutObject(file *os.File, bucket string, key string) error {
+func (s S3Repository) PutObject(r io.Reader, bucket string, key string) error {
 	_, err := s.Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: &bucket,
 		Key:    &key,
-		Body:   file,
+		Body:   r,
 	})
 	if err != nil {
 		return fmt.Errorf("could not put object %v", err)
 	}
 	return nil
 }
+
+// object := Object{
+// 	Key:          *obj.Key,
+// 	LastModified: *obj.LastModified,
+// 	Size:         *obj.Size,
+// 	ETag:         *obj.ETag,
+// 	StorageClass: obj.StorageClass,
+// 	Content:      string(content),
+// }

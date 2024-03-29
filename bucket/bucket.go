@@ -37,7 +37,7 @@ func (s S3Repository) GetAllBuckets() ([]list.Item, error) {
 		return nil, fmt.Errorf("could not list buckets: %v", err)
 	}
 
-	buckets := make([]list.Item, 0, len(s3buckets.Buckets))
+	var buckets []list.Item
 	for _, b := range s3buckets.Buckets {
 		buckets = append(buckets, Bucket{
 			Name:         *b.Name,

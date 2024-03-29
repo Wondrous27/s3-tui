@@ -68,10 +68,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, constants.Keymap.Quit):
 				m.quitting = true
 				return m, tea.Quit
+			case key.Matches(msg, constants.Keymap.Next):
+				fallthrough
 			case key.Matches(msg, constants.Keymap.Enter):
 				activeBucket := m.list.SelectedItem().(bucket.Bucket)
-				object := InitObjects(activeBucket.Name)
-				return object.Update(constants.WindowSize)
+				tree := InitTree(activeBucket.Name)
+				return tree.Update(constants.WindowSize)
 			}
 		}
 	}
@@ -87,7 +89,8 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	input.CharLimit = 250
 	input.Width = 50
 
-	// TODO: handle error
+	// TODO: Cache these items
+	// TODO: I'm not sure whether I should return []list.Item or []bucket.Bucket
 	items, err := constants.Br.GetAllBuckets()
 	if err != nil {
 		return nil, func() tea.Msg {

@@ -35,6 +35,16 @@ var ErrStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#bd534b")).Render
 // AlertStyle provides styling for alert messages
 var AlertStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Render
 
+// Directory:        r.NewStyle().Foreground(lipgloss.Color("99")),
+// File:             r.NewStyle(),
+var (
+	DirStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Render
+	FileStyle = lipgloss.NewStyle().Bold(true).Render
+	// Selected Style background grey color
+	SelectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("241")).Render
+	// FileStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("23")).Render
+)
+
 type keymap struct {
 	Create key.Binding
 	Edit   key.Binding
@@ -45,6 +55,8 @@ type keymap struct {
 	Quit   key.Binding
 	Next   key.Binding
 	Prev   key.Binding
+	Up     key.Binding
+	Down   key.Binding
 }
 
 // Keymap reusable key mappings shared across models
@@ -81,5 +93,11 @@ var Keymap = keymap{
 	),
 	Prev: key.NewBinding(
 		key.WithKeys("h"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("k", "up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("j", "down"),
 	),
 }
