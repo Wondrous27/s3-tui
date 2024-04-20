@@ -48,20 +48,18 @@ func InitObject(bucketName, key string) (tea.Model, tea.Cmd) {
 	m.viewport = viewport.New(constants.WindowSize.Width-left-right, constants.WindowSize.Height-top-bottom-1)
 	m.viewport.Style = lipgloss.NewStyle().Align(lipgloss.Bottom)
 
-	tmpobj, ok := m.setupObject(bucketName, key).(UpdatedObject)
+	obj, ok := m.setupObject(bucketName, key).(UpdatedObject)
 	if !ok {
 		log.Println("failed to setup object")
 		return m, tea.Quit
 	}
-	log.Println("tmpobj: ", tmpobj.Key, tmpobj.LastModified)
-	m.object = *tmpobj
+	m.object = *obj
 	m.setViewportContent()
 	return &m, nil
 }
 
 func (m *Object) setupObject(bucketName, key string) tea.Msg {
 	obj, err := constants.Or.GetObject(bucketName, key)
-	log.Println("object: ", obj.Key)
 	if err != nil {
 		return errMsg{fmt.Errorf("cannot get content: %v", err)}
 	}
@@ -70,6 +68,7 @@ func (m *Object) setupObject(bucketName, key string) tea.Msg {
 
 func (m *Object) setViewportContent() {
 	content := object.FormatObject(m.object)
+	// TODO: Change this with CodeBlock from gansi
 	str, err := glamour.Render(content, "dark")
 	if err != nil {
 		m.error = "could not render content with glamour"
@@ -80,7 +79,7 @@ func (m *Object) setViewportContent() {
 func (m Object) helpView() string {
 	// TODO: use the keymaps to populate the help string
 	return constants.HelpStyle(
-		"\n ↑/↓: navigate  • esc: back • e: edit object • c: create object • d: delete entry • q: quit\n",
+		"\n ↑/↓: navigate  • esc: back • e: edit object • d: delete object • q: quit\n",
 	)
 }
 
@@ -102,6 +101,7 @@ func (m Object) View() string {
 
 func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		top, right, bottom, left := constants.DocStyle.GetMargin()
@@ -110,21 +110,17 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case errMsg:
 		m.error = msg.Error()
 
-	// TODO
-	// case editorFinishedMsg:
-	// 	if msg.err != nil {
-	// 		return m, tea.Quit
-	// 	}
-	// 	cmds = append(cmds, m.updateObjectCmd(msg.file.Name()))
+	case editorFinishedMsg:
+		if msg.err != nil {
+			return m, tea.Quit
+		}
+		cmds = append(cmds, m.updateObjectCmd(msg.file.Name()))
 
 	case UpdatedObject:
-		// m.object = msg
-		m.setViewportContent()
+		m.object = *msg
 
 	case tea.KeyMsg:
 		switch {
-		// 	return m, nil
-		// TODO: fix this
 		case key.Matches(msg, constants.Keymap.Edit):
 			fileContent := m.object.Content
 			keys := strings.Split(m.object.Key, "/")
@@ -146,3 +142,16 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.setViewportContent() // refresh the content on every Update call
 	return m, tea.Batch(cmds...)
 }
+
+// TODO: Implement this
+// func (m *Object) isSelectedMarkdown() bool {
+// 	var lang string
+// 	lexer := lexers.Match(m.currentContent.ext)
+// 	if lexer == nil {
+// 		lexer = lexers.Analyse(m.currentContent.content)
+// 	}
+// 	if lexer != nil && lexer.Config() != nil {
+// 		lang = lexer.Config().Name
+// 	}
+// 	return lang == "markdown"
+// }

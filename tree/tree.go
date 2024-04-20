@@ -74,4 +74,3 @@ func sortByDir(n []*Node) {
 		return n[i].IsDir
 	})
 }
-

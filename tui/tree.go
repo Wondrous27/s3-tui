@@ -1,14 +1,19 @@
 package tui
 
 import (
-	"fmt"
+	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/Wondrous27/s3-tui/tree"
 	"github.com/Wondrous27/s3-tui/tui/constants"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+
+type UpdatedTree *Tree
 
 type Tree struct {
 	BucketName string
@@ -16,6 +21,9 @@ type Tree struct {
 	quitting   bool
 	cursor     int
 	selected   map[string]*tree.Node
+	input      textinput.Model
+	mode       mode
+	NewObjectKey  string
 }
 
 func (f Tree) DidSelectFile(msg tea.Msg) (bool, string) {
@@ -23,58 +31,93 @@ func (f Tree) DidSelectFile(msg tea.Msg) (bool, string) {
 }
 
 func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+	// TODO: Implement custom window resizing
 	case tea.WindowSizeMsg:
-		// todo:
+
+	case editorFinishedMsg:
+		cmds = append(cmds, f.createObjectCommand(msg.file.Name(), f.NewObjectKey))
+
+	case UpdatedTree:
+		f = *msg
+
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, constants.Keymap.Quit):
-			f.quitting = true
-			return f, tea.Quit
-
-		case key.Matches(msg, constants.Keymap.Up):
-			f.cursor = (f.cursor - 1 + len(f.Root.Children)) % len(f.Root.Children)
-			return f, nil
-
-		case key.Matches(msg, constants.Keymap.Enter):
-			curr := f.Root.Children[f.cursor]
-			if !curr.IsDir {
-				key := getPath(curr)
-				fmt.Println("key: ", key, "bucket: ", f.BucketName)
-				return InitObject(f.BucketName, key)
+		if f.input.Focused() {
+			if key.Matches(msg, constants.Keymap.Back) {
+				f.input.SetValue("")
+				f.mode = nav
+				f.input.Blur()
 			}
-			f.Root = curr
-			f.cursor = 0
-			return f, nil
 
-		case key.Matches(msg, constants.Keymap.Down):
-			f.cursor = (f.cursor + 1) % len(f.Root.Children)
-			return f, nil
-
-		case key.Matches(msg, constants.Keymap.Back):
-			return InitBuckets()
-
-		case key.Matches(msg, constants.Keymap.Prev):
-			if f.Root.Name == "" {
-				return InitBuckets()
+			if key.Matches(msg, constants.Keymap.Enter) {
+				s3Key := f.input.Value()
+				f.NewObjectKey = s3Key
+				extension := filepath.Ext(s3Key)
+				f.input.SetValue("")
+				f.mode = nav
+				f.input.Blur()
+				return f, openEditorCmd("", extension)
 			}
-			f.Root = f.Root.Parent
-			f.cursor = 0
-			return f, nil
 
-		case key.Matches(msg, constants.Keymap.Next):
-			if f.Root.Children[f.cursor].IsDir {
-				f.Root = f.Root.Children[f.cursor]
+			f.input, cmd = f.input.Update(msg)
+			cmds = append(cmds, cmd)
+			f.input.Update(msg)
+		} else {
+			switch {
+			case key.Matches(msg, constants.Keymap.Quit):
+				f.quitting = true
+				return f, tea.Quit
+
+			case key.Matches(msg, constants.Keymap.Create):
+				f.mode = create
+				f.input.Focus()
+				cmd = textinput.Blink
+
+			case key.Matches(msg, constants.Keymap.Up):
+				f.cursor = (f.cursor - 1 + len(f.Root.Children)) % len(f.Root.Children)
+				return f, nil
+
+			case key.Matches(msg, constants.Keymap.Down):
+				f.cursor = (f.cursor + 1) % len(f.Root.Children)
+				return f, nil
+
+			case key.Matches(msg, constants.Keymap.Enter):
+				curr := f.Root.Children[f.cursor]
+				if !curr.IsDir {
+					key := getPath(curr)
+					return InitObject(f.BucketName, key)
+				}
+				f.Root = curr
 				f.cursor = 0
+				return f, nil
+
+			case key.Matches(msg, constants.Keymap.Back):
+				return InitBuckets()
+
+			case key.Matches(msg, constants.Keymap.Prev):
+				if f.Root.Name == "" {
+					return InitBuckets()
+				}
+				f.Root = f.Root.Parent
+				f.cursor = 0
+				return f, nil
+
+			case key.Matches(msg, constants.Keymap.Next):
+				if f.Root.Children[f.cursor].IsDir {
+					f.Root = f.Root.Children[f.cursor]
+					f.cursor = 0
+				}
+				return f, nil
 			}
-			return f, nil
 		}
 	}
-	return f, nil
+	return f, tea.Batch(cmds...)
 }
 
+// TODO: make this prettier
 func (f Tree) View() string {
-	var s strings.Builder
+	var sb strings.Builder
 	for i, child := range f.Root.Children {
 		cursor := " "
 		isSelected := false
@@ -82,15 +125,19 @@ func (f Tree) View() string {
 			cursor = "> "
 			isSelected = true
 		}
-		s.WriteString(cursor)
-		s.WriteString(styledFileName(child.IsDir, isSelected, child.Name))
-		s.WriteString("\n\n")
+		sb.WriteString(cursor)
+		sb.WriteString(styledFileName(child.IsDir, isSelected, child.Name))
+		sb.WriteString("\n\n")
 	}
 
-	s.WriteString(constants.HelpStyle(
-		"\n ↑/↓ j/h: navigate • esc: back • e: edit object • q: quit\n",
+	sb.WriteString(constants.HelpStyle(
+		"\n ↑/↓ j/h: navigate • esc: back • c: create object • q: quit\n",
 	))
-	return s.String()
+	if f.input.Focused() {
+		// TODO: Find new style to render this
+		return constants.DocStyle.Render(sb.String() + "\n" + f.input.View())
+	}
+	return constants.DocStyle.Render(sb.String())
 }
 
 func styledFileName(isDir, isSelected bool, name string) string {
@@ -108,6 +155,12 @@ func (f Tree) Init() tea.Cmd {
 }
 
 func InitTree(bucketName string) *Tree {
+	input := textinput.New()
+	input.Prompt = "$ "
+	input.Placeholder = "Object Key..."
+	input.CharLimit = 250
+	input.Width = 50
+
 	objects, err := constants.Or.ListObjects(bucketName)
 	if err != nil {
 		panic(err.Error())
@@ -117,7 +170,14 @@ func InitTree(bucketName string) *Tree {
 		BucketName: bucketName,
 		Root:       root.Root,
 		cursor:     0,
+		input:      input,
 	}
+}
+
+func (f Tree) setupTree(bucketName string) tea.Msg {
+	tree := InitTree(bucketName)
+	log.Printf("%v\n", tree)
+	return UpdatedTree(tree)
 }
 
 // bucket/bucket.go
@@ -126,16 +186,11 @@ func getPath(n *tree.Node) string {
 	path := []string{curr.Name}
 	for curr.Parent.Name != "" {
 		curr = curr.Parent
-		// fmt.Println("curr.Name: ", curr.Name)
 		path = append(path, curr.Name)
 	}
 	var p string
 	for i := len(path) - 1; i >= 0; i-- {
 		p += path[i] + "/"
 	}
-	fmt.Println("path: ", p)
 	return p[:len(p)-1]
-	// fmt.Println("path: ", path)
-	// fmt.Println("path joined: ", strings.Join(path, "/"))
-	// return strings.Join(path, "/")
 }

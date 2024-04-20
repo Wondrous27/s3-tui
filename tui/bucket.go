@@ -53,7 +53,7 @@ func (m Model) View() string {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// var cmd tea.Cmd
+	var cmd tea.Cmd
 	// var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -62,9 +62,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetSize(msg.Width-left-right, msg.Height-top-bottom-1)
 	case tea.KeyMsg:
 		if m.input.Focused() {
-			// handle the case for focused
+			// TODO: Handle bucket creation
 		} else {
 			switch {
+			case key.Matches(msg, constants.Keymap.Create):
+				m.mode = create
+				m.input.Focus()
+				cmd = textinput.Blink
 			case key.Matches(msg, constants.Keymap.Quit):
 				m.quitting = true
 				return m, tea.Quit
@@ -77,7 +81,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
@@ -89,7 +92,6 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	input.CharLimit = 250
 	input.Width = 50
 
-	// TODO: Cache these items
 	// TODO: I'm not sure whether I should return []list.Item or []bucket.Bucket
 	items, err := constants.Br.GetAllBuckets()
 	if err != nil {
@@ -115,4 +117,3 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	}
 	return m, nil
 }
-

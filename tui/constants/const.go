@@ -8,8 +8,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-/* CONSTANTS */
-
 var (
 	// P the current tea program
 	P *tea.Program
@@ -35,8 +33,6 @@ var ErrStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#bd534b")).Render
 // AlertStyle provides styling for alert messages
 var AlertStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Render
 
-// Directory:        r.NewStyle().Foreground(lipgloss.Color("99")),
-// File:             r.NewStyle(),
 var (
 	DirStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("34")).Render
 	FileStyle = lipgloss.NewStyle().Bold(true).Render
