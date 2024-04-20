@@ -82,6 +82,9 @@ func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return f, nil
 
 			case key.Matches(msg, constants.Keymap.Enter), key.Matches(msg, constants.Keymap.Next):
+				if len(f.Root.Children) == 0 {
+					return f, nil
+				}
 				curr := f.Root.Children[f.cursor]
 				if !curr.IsDir {
 					key := getPath(curr)
