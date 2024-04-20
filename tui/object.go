@@ -131,6 +131,11 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// return m, openEditorCmd()
 		case key.Matches(msg, constants.Keymap.Back):
 			return InitBuckets()
+
+		case key.Matches(msg, constants.Keymap.Prev):
+			tree := InitTree(m.activeBucketName)
+			return tree.Update(constants.WindowSize)
+
 		case key.Matches(msg, constants.Keymap.Quit):
 			m.quitting = true
 			return m, tea.Quit

@@ -50,10 +50,6 @@ func (f Tree) createObjectCommand(fileName, s3Key string) tea.Cmd {
 		if err != nil {
 			return errMsg{fmt.Errorf("[createObjectCommand] cannot put object %v", err)}
 		}
-		// TODO: come back
-		// tree := InitTree(f.BucketName)
-		// return tree.Update(constants.WindowSize)
 		return f.setupTree(f.BucketName)
-		// return nil
 	}
 }

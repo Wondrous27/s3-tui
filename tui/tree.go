@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -82,7 +81,7 @@ func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				f.cursor = (f.cursor + 1) % len(f.Root.Children)
 				return f, nil
 
-			case key.Matches(msg, constants.Keymap.Enter):
+			case key.Matches(msg, constants.Keymap.Enter), key.Matches(msg, constants.Keymap.Next):
 				curr := f.Root.Children[f.cursor]
 				if !curr.IsDir {
 					key := getPath(curr)
@@ -103,12 +102,6 @@ func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				f.cursor = 0
 				return f, nil
 
-			case key.Matches(msg, constants.Keymap.Next):
-				if f.Root.Children[f.cursor].IsDir {
-					f.Root = f.Root.Children[f.cursor]
-					f.cursor = 0
-				}
-				return f, nil
 			}
 		}
 	}
@@ -176,7 +169,6 @@ func InitTree(bucketName string) *Tree {
 
 func (f Tree) setupTree(bucketName string) tea.Msg {
 	tree := InitTree(bucketName)
-	log.Printf("%v\n", tree)
 	return UpdatedTree(tree)
 }
 
