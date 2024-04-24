@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// TODO: Handle duplicate names
 type Node struct {
 	Name         string
 	IsDir        bool

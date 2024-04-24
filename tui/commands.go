@@ -56,7 +56,7 @@ func (f Tree) createObjectCommand(fileName, s3Key string) tea.Cmd {
 
 func createBucketCommand(bucketName string) tea.Cmd {
 	return func() tea.Msg {
-		err := constants.Br.CreateBucket(bucketName, "eu-central-1") // TODO: )
+		err := constants.Br.CreateBucket(bucketName)
 		if err != nil {
 			return CreatedBucketMsg{fmt.Errorf("[createBucketCommand] cannot create a bucket named %s %v", bucketName, err)}
 		}

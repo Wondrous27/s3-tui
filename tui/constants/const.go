@@ -5,7 +5,10 @@ import (
 	"github.com/Wondrous27/s3-tui/object"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
+	gansi "github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 var (
@@ -40,6 +43,8 @@ var (
 	SelectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("241")).Render
 	// FileStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("23")).Render
 )
+
+var DefaultColorProfile = termenv.ANSI256
 
 var (
 	ButtonStyle = lipgloss.NewStyle().
@@ -122,4 +127,33 @@ var Keymap = keymap{
 	Down: key.NewBinding(
 		key.WithKeys("j", "down"),
 	),
+}
+
+func strptr(s string) *string {
+	return &s
+}
+
+func StyleConfig() gansi.StyleConfig {
+	noColor := strptr("")
+	s := glamour.DarkStyleConfig
+	s.H1.BackgroundColor = noColor
+	s.H1.Prefix = "# "
+	s.H1.Suffix = ""
+	s.H1.Color = strptr("39")
+	s.Document.StylePrimitive.Color = noColor
+	s.CodeBlock.Chroma.Text.Color = noColor
+	s.CodeBlock.Chroma.Name.Color = noColor
+	// This fixes an issue with the default style config. For example
+	// highlighting empty spaces with red in Dockerfile type.
+	s.CodeBlock.Chroma.Error.BackgroundColor = noColor
+	return s
+}
+
+// StyleRendererWithStyles returns a new Glamour renderer with the
+// DefaultColorProfile and styles.
+func StyleRendererWithStyles(styles gansi.StyleConfig) gansi.RenderContext {
+	return gansi.NewRenderContext(gansi.Options{
+		ColorProfile: DefaultColorProfile,
+		Styles:       styles,
+	})
 }

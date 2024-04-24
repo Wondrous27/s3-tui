@@ -18,7 +18,6 @@ const (
 	nav mode = iota
 	edit
 	del
-	rename // TODO: rename bucket - aws s3 mb s3://[new-bucket] && aws s3 sync s3://[old-bucket] s3://[new-bucket] && aws s3 rb --force s3://[old-bucket]
 )
 
 type CreatedBucketMsg struct {
@@ -144,7 +143,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// TODO: This is inefficient, call this function only for the first time. Use setupBuckets() for subsequent calls.
+// TODO: Come back to this
 func InitBuckets() (tea.Model, tea.Cmd) {
 	input := textinput.New()
 	input.Prompt = "$ "

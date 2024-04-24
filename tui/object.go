@@ -8,11 +8,14 @@ import (
 
 	"github.com/Wondrous27/s3-tui/object"
 	"github.com/Wondrous27/s3-tui/tui/constants"
+	"github.com/alecthomas/chroma/lexers"
+	"github.com/muesli/termenv"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	gansi "github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -67,13 +70,66 @@ func (m *Object) setupObject(bucketName, key string) tea.Msg {
 }
 
 func (m *Object) setViewportContent() {
+	var str string
+	var err error
 	content := object.FormatObject(m.object)
-	// TODO: Change this with CodeBlock from gansi
-	str, err := glamour.Render(content, "dark")
-	if err != nil {
-		m.error = "could not render content with glamour"
+	if m.isSelectedMarkdown() {
+		str, err = glamour.Render(content, "dark")
+		if err != nil {
+			m.error = "could not render content with glamour"
+		}
+	} else {
+		str, err = m.renderFile(m.object.Key, content)
+		log.Println("rendering file", str)
+		if err != nil {
+			log.Println("error rendering file", err)
+			m.error = "could not render content with renderFile"
+		}
+
 	}
 	m.viewport.SetContent(str)
+}
+
+func (m *Object) renderFile(path, content string) (string, error) {
+	lexer := lexers.Match(path)
+	if path == "" {
+		lexer = lexers.Analyse(content)
+	}
+	lang := ""
+	if lexer != nil && lexer.Config() != nil {
+		lang = lexer.Config().Name
+	}
+
+	formatter := &gansi.CodeBlockElement{
+		Code:     content,
+		Language: lang,
+	}
+	s := strings.Builder{}
+	st := constants.StyleConfig()
+	var u uint
+	st.CodeBlock.Margin = &u
+	rc := gansi.NewRenderContext(gansi.Options{
+		ColorProfile: termenv.TrueColor,
+		Styles:       st,
+	})
+	err := formatter.Render(&s, rc)
+	if err != nil {
+		return "", err
+	}
+
+	return s.String(), nil
+}
+
+func (m Object) isSelectedMarkdown() bool {
+	var lang string
+	lexer := lexers.Match(m.object.Key)
+	if lexer == nil {
+		lexer = lexers.Analyse(m.object.Content)
+	}
+	if lexer != nil && lexer.Config() != nil {
+		lang = lexer.Config().Name
+	}
+	return lang == "markdown"
 }
 
 func (m Object) helpView() string {
@@ -146,16 +202,3 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.setViewportContent()
 	return m, tea.Batch(cmds...)
 }
-
-// TODO: Implement this
-// func (m *Object) isSelectedMarkdown() bool {
-// 	var lang string
-// 	lexer := lexers.Match(m.currentContent.ext)
-// 	if lexer == nil {
-// 		lexer = lexers.Analyse(m.currentContent.content)
-// 	}
-// 	if lexer != nil && lexer.Config() != nil {
-// 		lang = lexer.Config().Name
-// 	}
-// 	return lang == "markdown"
-// }
