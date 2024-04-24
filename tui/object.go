@@ -128,7 +128,6 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, openEditorCmd(fileContent, fileName)
 		case key.Matches(msg, constants.Keymap.Create):
 			return m, nil
-			// return m, openEditorCmd()
 		case key.Matches(msg, constants.Keymap.Back):
 			return InitBuckets()
 
@@ -144,7 +143,7 @@ func (m Object) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.viewport, cmd = m.viewport.Update(msg)
 	cmds = append(cmds, cmd)
-	m.setViewportContent() // refresh the content on every Update call
+	m.setViewportContent()
 	return m, tea.Batch(cmds...)
 }
 

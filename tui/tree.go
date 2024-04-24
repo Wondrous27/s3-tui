@@ -11,18 +11,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-
 type UpdatedTree *Tree
 
 type Tree struct {
-	BucketName string
-	Root       *tree.Node
-	quitting   bool
-	cursor     int
-	selected   map[string]*tree.Node
-	input      textinput.Model
-	mode       mode
-	NewObjectKey  string
+	BucketName   string
+	Root         *tree.Node
+	quitting     bool
+	cursor       int
+	input        textinput.Model
+	mode         mode
+	NewObjectKey string
 }
 
 func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -65,7 +63,6 @@ func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return f, tea.Quit
 
 			case key.Matches(msg, constants.Keymap.Create):
-				f.mode = create
 				f.input.Focus()
 				cmd = textinput.Blink
 

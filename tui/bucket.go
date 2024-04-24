@@ -1,9 +1,6 @@
 package tui
 
 import (
-
-	// "github.com/charmbracelet/bubbles/key"
-
 	"fmt"
 
 	"github.com/Wondrous27/s3-tui/bucket"
@@ -15,22 +12,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-/* TODO */
-// type (
-// 	updateBucketListMsg struct{}
-// 	renameProjectMsg     []list.Item
-// )
-
 type mode int
 
-// TODO: When deleting a bucket
-// question := lipgloss.NewStyle().Width(50).Align(lipgloss.Center).Render("Are you sure you want to eat marmalade?")
 const (
 	nav mode = iota
 	edit
-	create // TODO: create bucket - aws s3 mb s3://bucket-name
+	del
 	rename // TODO: rename bucket - aws s3 mb s3://[new-bucket] && aws s3 sync s3://[old-bucket] s3://[new-bucket] && aws s3 rb --force s3://[old-bucket]
-	deletion
 )
 
 type CreatedBucketMsg struct {
@@ -60,7 +48,7 @@ func (m Model) View() string {
 		return ""
 	}
 
-	if m.mode == deletion {
+	if m.mode == del {
 		return m.DisplayConfirmation()
 	}
 
@@ -110,7 +98,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 			m.input.Update(msg)
 		} else {
-			if m.mode == deletion {
+			if m.mode == del {
 				switch {
 				case key.Matches(msg, constants.Keymap.Quit):
 					m.quitting = true
@@ -132,15 +120,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			switch {
 			case key.Matches(msg, constants.Keymap.Delete):
-				// bucket := m.list.SelectedItem().(bucket.Bucket)
-				m.mode = deletion
-				// return m, nil
-				// return m, deleteBucketCommand(bucket.Name)
+				m.mode = del
 
 			case key.Matches(msg, constants.Keymap.Create):
-				m.mode = create
 				m.input.Focus()
 				cmd = textinput.Blink
+				cmds = append(cmds, cmd)
 
 			case key.Matches(msg, constants.Keymap.Quit):
 				m.quitting = true
