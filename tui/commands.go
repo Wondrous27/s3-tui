@@ -71,6 +71,6 @@ func deleteBucketCommand(bucketName string) tea.Cmd {
 			log.Printf("failed to delete bucket %s, %v", bucketName, err)
 			return CreatedBucketMsg{fmt.Errorf("[deleteBucketCommand] cannot delete a bucket named %s %v", bucketName, err)}
 		}
-		return DeletedBucketMsg{err: nil}
+		return DeletedBucketMsg{err: nil, bucketName: bucketName}
 	}
 }

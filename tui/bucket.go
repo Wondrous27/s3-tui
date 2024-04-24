@@ -3,7 +3,8 @@ package tui
 import (
 
 	// "github.com/charmbracelet/bubbles/key"
-	"log"
+
+	"fmt"
 
 	"github.com/Wondrous27/s3-tui/bucket"
 	"github.com/Wondrous27/s3-tui/tui/constants"
@@ -11,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 /* TODO */
@@ -28,6 +30,7 @@ const (
 	edit
 	create // TODO: create bucket - aws s3 mb s3://bucket-name
 	rename // TODO: rename bucket - aws s3 mb s3://[new-bucket] && aws s3 sync s3://[old-bucket] s3://[new-bucket] && aws s3 rb --force s3://[old-bucket]
+	deletion
 )
 
 type CreatedBucketMsg struct {
@@ -35,7 +38,8 @@ type CreatedBucketMsg struct {
 }
 
 type DeletedBucketMsg struct {
-	err error
+	err        error
+	bucketName string
 }
 
 type Model struct {
@@ -43,6 +47,7 @@ type Model struct {
 	list     list.Model
 	input    textinput.Model
 	quitting bool
+	isSure   bool
 }
 
 /* Implement tea.Model for Model */
@@ -53,6 +58,10 @@ func (m Model) Init() tea.Cmd {
 func (m Model) View() string {
 	if m.quitting {
 		return ""
+	}
+
+	if m.mode == deletion {
+		return m.DisplayConfirmation()
 	}
 
 	if m.input.Focused() {
@@ -101,11 +110,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 			m.input.Update(msg)
 		} else {
+			if m.mode == deletion {
+				switch {
+				case key.Matches(msg, constants.Keymap.Quit):
+					m.quitting = true
+					return m, tea.Quit
+
+				case key.Matches(msg, constants.Keymap.Enter):
+					bucket := m.list.SelectedItem().(bucket.Bucket)
+					m.mode = nav
+					if m.isSure {
+						return m, deleteBucketCommand(bucket.Name)
+					} else {
+						return m, nil
+					}
+
+				case key.Matches(msg, constants.Keymap.Next), key.Matches(msg, constants.Keymap.Prev):
+					m.isSure = !m.isSure
+				}
+				return m, nil
+			}
 			switch {
 			case key.Matches(msg, constants.Keymap.Delete):
-				bucket := m.list.SelectedItem().(bucket.Bucket)
-				log.Println("deleting bucket:", bucket.Name)
-				return m, deleteBucketCommand(bucket.Name)
+				// bucket := m.list.SelectedItem().(bucket.Bucket)
+				m.mode = deletion
+				// return m, nil
+				// return m, deleteBucketCommand(bucket.Name)
 
 			case key.Matches(msg, constants.Keymap.Create):
 				m.mode = create
@@ -169,4 +199,36 @@ func (m *Model) setupBuckets() tea.Msg {
 	}
 	m.list.SetItems(items)
 	return nil
+}
+
+func (m Model) DisplayConfirmation() string {
+	buttonStyle := map[bool]lipgloss.Style{
+		true:  constants.ActiveButtonStyle,
+		false: constants.ButtonStyle,
+	}
+	okb := buttonStyle[m.isSure]
+	cb := buttonStyle[!m.isSure]
+
+	okButton := okb.Render("Yes")
+	cancelButton := cb.Render("No")
+
+	activeBucket := m.list.SelectedItem().(bucket.Bucket)
+	msg := fmt.Sprintf("Are you sure you want to delete %s?", activeBucket.Name)
+	question := lipgloss.NewStyle().Width(60).Align(lipgloss.Center).Render(msg)
+	buttons := lipgloss.JoinHorizontal(lipgloss.Top, okButton, cancelButton)
+	ui := lipgloss.JoinVertical(lipgloss.Center, question, buttons)
+
+	const (
+		width       = 96
+		columnWidth = 30
+	)
+
+	dialog := lipgloss.Place(width, 9,
+		lipgloss.Center, lipgloss.Center,
+		constants.DialogBoxStyle.Render(ui),
+		lipgloss.WithWhitespaceChars(""),
+		lipgloss.WithWhitespaceForeground(constants.Subtle),
+	)
+
+	return dialog
 }
