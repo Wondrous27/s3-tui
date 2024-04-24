@@ -83,11 +83,18 @@ func (s S3Repository) PutObject(r io.Reader, bucket string, key string) error {
 	return nil
 }
 
-// object := Object{
-// 	Key:          *obj.Key,
-// 	LastModified: *obj.LastModified,
-// 	Size:         *obj.Size,
-// 	ETag:         *obj.ETag,
-// 	StorageClass: obj.StorageClass,
-// 	Content:      string(content),
-// }
+func (s S3Repository) CreateBucket(bucketName, region string) error {
+	log.Println("CreateBucket bucketName: ", bucketName)
+	// _, err := s.Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{ Bucket: &bucketName, CreateBucketConfiguration: &types.CreateBucketConfiguration{LocationConstraint: types.BucketLocationConstraintEuCentral1 })
+	_, err := s.Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
+		Bucket: &bucketName,
+		CreateBucketConfiguration: &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(region),
+		},
+	})
+	if err != nil {
+		log.Println("failed to create bucket: ", err)
+		return fmt.Errorf("could not put object %v", err)
+	}
+	return nil
+}

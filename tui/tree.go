@@ -25,10 +25,6 @@ type Tree struct {
 	NewObjectKey  string
 }
 
-func (f Tree) DidSelectFile(msg tea.Msg) (bool, string) {
-	return false, ""
-}
-
 func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -85,6 +81,7 @@ func (f Tree) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(f.Root.Children) == 0 {
 					return f, nil
 				}
+
 				curr := f.Root.Children[f.cursor]
 				if !curr.IsDir {
 					key := getPath(curr)
@@ -127,7 +124,7 @@ func (f Tree) View() string {
 	}
 
 	sb.WriteString(constants.HelpStyle(
-		"\n ↑/↓ j/h: navigate • esc: back • c: create object • q: quit\n",
+		"\n ↑/↓ h/j/k/l: navigate • esc: back • c: create object • q: quit\n",
 	))
 	if f.input.Focused() {
 		// TODO: Find new style to render this
@@ -175,7 +172,6 @@ func (f Tree) setupTree(bucketName string) tea.Msg {
 	return UpdatedTree(tree)
 }
 
-// bucket/bucket.go
 func getPath(n *tree.Node) string {
 	curr := n
 	path := []string{curr.Name}

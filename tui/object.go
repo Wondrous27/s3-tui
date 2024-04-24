@@ -79,7 +79,7 @@ func (m *Object) setViewportContent() {
 func (m Object) helpView() string {
 	// TODO: use the keymaps to populate the help string
 	return constants.HelpStyle(
-		"\n ↑/↓: navigate  • esc: back • e: edit object • d: delete object • q: quit\n",
+		"\n ↑/↓: h/j/k/l navigate  • esc: back • e: edit object • d: delete object • q: quit\n",
 	)
 }
 

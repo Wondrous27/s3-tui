@@ -28,6 +28,10 @@ const (
 	rename // TODO: rename bucket - aws s3 mb s3://[new-bucket] && aws s3 sync s3://[old-bucket] s3://[new-bucket] && aws s3 rb --force s3://[old-bucket]
 )
 
+type CreatedBucketMsg struct {
+	err error
+}
+
 type Model struct {
 	mode     mode
 	list     list.Model
@@ -54,12 +58,16 @@ func (m Model) View() string {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	// var cmds []tea.Cmd
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		constants.WindowSize = msg
 		top, right, bottom, left := constants.DocStyle.GetMargin()
 		m.list.SetSize(msg.Width-left-right, msg.Height-top-bottom-1)
+
+	case CreatedBucketMsg:
+		m.setupBuckets()
+
 	case tea.KeyMsg:
 		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
@@ -67,7 +75,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.input.Focused() {
-			// TODO: Handle bucket creation
+			if key.Matches(msg, constants.Keymap.Back) {
+				m.input.SetValue("")
+				m.mode = nav
+				m.input.Blur()
+			}
+
+			if key.Matches(msg, constants.Keymap.Enter) {
+				bucketName := m.input.Value()
+				m.input.SetValue("")
+				m.mode = nav
+				m.input.Blur()
+				return m, createBucketCommand(bucketName)
+			}
+
+			m.input, cmd = m.input.Update(msg)
+			cmds = append(cmds, cmd)
+			m.input.Update(msg)
 		} else {
 			switch {
 			case key.Matches(msg, constants.Keymap.Create):
@@ -86,10 +110,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
+
+	tea.Batch(cmds...)
 	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
 
+// TODO: This is inefficient, call this function only for the first time. Use setupBuckets() for subsequent calls.
 func InitBuckets() (tea.Model, tea.Cmd) {
 	input := textinput.New()
 	input.Prompt = "$ "
@@ -97,7 +124,6 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 	input.CharLimit = 250
 	input.Width = 50
 
-	// TODO: I'm not sure whether I should return []list.Item or []bucket.Bucket
 	items, err := constants.Br.GetAllBuckets()
 	if err != nil {
 		return nil, func() tea.Msg {
@@ -121,4 +147,13 @@ func InitBuckets() (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+func (m *Model) setupBuckets() tea.Msg {
+	items, err := constants.Br.GetAllBuckets()
+	if err != nil {
+		return errMsg{error: err}
+	}
+	m.list.SetItems(items)
+	return nil
 }

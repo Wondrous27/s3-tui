@@ -53,3 +53,13 @@ func (f Tree) createObjectCommand(fileName, s3Key string) tea.Cmd {
 		return f.setupTree(f.BucketName)
 	}
 }
+
+func createBucketCommand(bucketName string) tea.Cmd {
+	return func() tea.Msg {
+		err := constants.Or.CreateBucket(bucketName, "eu-central-1") // TODO: )
+		if err != nil {
+			return CreatedBucketMsg{fmt.Errorf("[createBucketCommand] cannot create a bucket named %s %v", bucketName, err)}
+		}
+		return CreatedBucketMsg{err: nil}
+	}
+}

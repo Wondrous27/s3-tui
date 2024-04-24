@@ -31,6 +31,7 @@ func (b Bucket) Description() string {
 
 func (b Bucket) FilterValue() string { return b.Name }
 
+// TODO: I'm not sure whether I should return []list.Item or []bucket.Bucket
 func (s S3Repository) GetAllBuckets() ([]list.Item, error) {
 	s3buckets, err := s.Client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	if err != nil {
