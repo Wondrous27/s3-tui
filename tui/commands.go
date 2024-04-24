@@ -56,10 +56,21 @@ func (f Tree) createObjectCommand(fileName, s3Key string) tea.Cmd {
 
 func createBucketCommand(bucketName string) tea.Cmd {
 	return func() tea.Msg {
-		err := constants.Or.CreateBucket(bucketName, "eu-central-1") // TODO: )
+		err := constants.Br.CreateBucket(bucketName, "eu-central-1") // TODO: )
 		if err != nil {
 			return CreatedBucketMsg{fmt.Errorf("[createBucketCommand] cannot create a bucket named %s %v", bucketName, err)}
 		}
 		return CreatedBucketMsg{err: nil}
+	}
+}
+
+func deleteBucketCommand(bucketName string) tea.Cmd {
+	return func() tea.Msg {
+		err := constants.Br.DeleteBucket(bucketName)
+		if err != nil {
+			log.Printf("failed to delete bucket %s, %v", bucketName, err)
+			return CreatedBucketMsg{fmt.Errorf("[deleteBucketCommand] cannot delete a bucket named %s %v", bucketName, err)}
+		}
+		return DeletedBucketMsg{err: nil}
 	}
 }

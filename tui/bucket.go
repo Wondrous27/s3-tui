@@ -3,6 +3,8 @@ package tui
 import (
 
 	// "github.com/charmbracelet/bubbles/key"
+	"log"
+
 	"github.com/Wondrous27/s3-tui/bucket"
 	"github.com/Wondrous27/s3-tui/tui/constants"
 	"github.com/charmbracelet/bubbles/key"
@@ -29,6 +31,10 @@ const (
 )
 
 type CreatedBucketMsg struct {
+	err error
+}
+
+type DeletedBucketMsg struct {
 	err error
 }
 
@@ -68,8 +74,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case CreatedBucketMsg:
 		m.setupBuckets()
 
+	case DeletedBucketMsg:
+		m.setupBuckets()
+
 	case tea.KeyMsg:
-		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
 			break
 		}
@@ -94,16 +102,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input.Update(msg)
 		} else {
 			switch {
+			case key.Matches(msg, constants.Keymap.Delete):
+				bucket := m.list.SelectedItem().(bucket.Bucket)
+				log.Println("deleting bucket:", bucket.Name)
+				return m, deleteBucketCommand(bucket.Name)
+
 			case key.Matches(msg, constants.Keymap.Create):
 				m.mode = create
 				m.input.Focus()
 				cmd = textinput.Blink
+
 			case key.Matches(msg, constants.Keymap.Quit):
 				m.quitting = true
 				return m, tea.Quit
-			case key.Matches(msg, constants.Keymap.Next):
-				fallthrough
-			case key.Matches(msg, constants.Keymap.Enter):
+
+			case key.Matches(msg, constants.Keymap.Enter), key.Matches(msg, constants.Keymap.Next):
 				activeBucket := m.list.SelectedItem().(bucket.Bucket)
 				tree := InitTree(activeBucket.Name)
 				return tree.Update(constants.WindowSize)

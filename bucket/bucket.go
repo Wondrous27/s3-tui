@@ -3,9 +3,11 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/charmbracelet/bubbles/list"
 )
 
@@ -46,4 +48,29 @@ func (s S3Repository) GetAllBuckets() ([]list.Item, error) {
 		})
 	}
 	return buckets, nil
+}
+
+func (s S3Repository) CreateBucket(bucketName, region string) error {
+	log.Println("CreateBucket bucketName: ", bucketName)
+	_, err := s.Client.CreateBucket(context.TODO(), &s3.CreateBucketInput{
+		Bucket: &bucketName,
+		CreateBucketConfiguration: &types.CreateBucketConfiguration{
+			LocationConstraint: types.BucketLocationConstraint(region),
+		},
+	})
+	if err != nil {
+		log.Println("failed to create bucket: ", err)
+		return fmt.Errorf("could not put object %v", err)
+	}
+	return nil
+}
+
+func (s S3Repository) DeleteBucket(bucketName string) error {
+	log.Println("attempting to delete bucket", bucketName)
+	_, err := s.Client.DeleteBucket(context.TODO(), &s3.DeleteBucketInput{Bucket: &bucketName})
+	if err != nil {
+		log.Printf("Failed to delete bucket %s %v", bucketName, err)
+		return fmt.Errorf("faile to delete bucket, here's why: %v", err)
+	}
+	return nil
 }
