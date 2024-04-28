@@ -1,6 +1,9 @@
 package constants
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/Wondrous27/s3-tui/bucket"
 	"github.com/Wondrous27/s3-tui/object"
 	"github.com/charmbracelet/bubbles/key"
@@ -156,4 +159,27 @@ func StyleRendererWithStyles(styles gansi.StyleConfig) gansi.RenderContext {
 		ColorProfile: DefaultColorProfile,
 		Styles:       styles,
 	})
+}
+
+// FormatLineNumber adds line numbers to a string.
+func FormatLineNumber(s string, color bool) (string, int) {
+	lines := strings.Split(s, "\n")
+	// NB: len() is not a particularly safe way to count string width (because
+	// it's counting bytes instead of runes) but in this case it's okay
+	// because we're only dealing with digits, which are one byte each.
+	mll := len(fmt.Sprintf("%d", len(lines)))
+	for i, l := range lines {
+		digit := fmt.Sprintf("%*d", mll, i+1)
+		bar := "│"
+		if color {
+			digit = lipgloss.NewStyle().Foreground(lipgloss.Color("239")).Render(digit)
+			bar = lipgloss.NewStyle().Foreground(lipgloss.Color("236")).Render(bar)
+		}
+		if i < len(lines)-1 || len(l) != 0 {
+			// If the final line was a newline we'll get an empty string for
+			// the final line, so drop the newline altogether.
+			lines[i] = fmt.Sprintf(" %s %s %s", digit, bar, l)
+		}
+	}
+	return strings.Join(lines, "\n"), mll
 }

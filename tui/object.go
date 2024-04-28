@@ -80,6 +80,7 @@ func (m *Object) setViewportContent() {
 		}
 	} else {
 		str, err = m.renderFile(m.object.Key, content)
+		str, _ = constants.FormatLineNumber(str, true)
 		log.Println("rendering file", str)
 		if err != nil {
 			log.Println("error rendering file", err)
@@ -112,8 +113,8 @@ func (m *Object) renderFile(path, content string) (string, error) {
 		ColorProfile: termenv.TrueColor,
 		Styles:       st,
 	})
-	err := formatter.Render(&s, rc)
-	if err != nil {
+
+	if err := formatter.Render(&s, rc); err != nil {
 		return "", err
 	}
 
